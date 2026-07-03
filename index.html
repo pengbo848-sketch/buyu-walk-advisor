@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>步语 · 走路时的思考伙伴</title>
+<meta name="description" content="边走边说，边听建议。一个给散步时的你用的小工具。" />
+<meta name="theme-color" content="#1B2430" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="步语" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-top: #1B2430;
+    --bg-bottom: #10262b;
+    --panel: #22303c;
+    --panel-line: rgba(232, 168, 85, 0.14);
+    --ink: #EDEDE4;
+    --ink-dim: #8FA0B3;
+    --amber: #E8A855;
+    --amber-soft: #F5C581;
+    --danger: #C97064;
+    font-size: 16px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    color: var(--ink);
+    font-family: "Noto Sans SC", system-ui, -apple-system, sans-serif;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  header {
+    padding: 28px 24px 8px;
+    text-align: center;
+  }
+
+  .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.28em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-family: "Noto Serif SC", serif;
+    font-weight: 500;
+    font-size: 1.35rem;
+    margin: 6px 0 0;
+    color: var(--amber-soft);
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 22px;
+    padding: 8px 20px 28px;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* --- Mic button: the lantern --- */
+  .mic-wrap {
+    position: relative;
+    width: 168px;
+    height: 168px;
+    margin-top: 18px;
+    flex-shrink: 0;
+  }
+
+  .mic-glow {
+    position: absolute;
+    inset: -30px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,168,85,0.35) 0%, rgba(232,168,85,0) 70%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .mic-glow.active {
+    opacity: 1;
+    animation: breathe 1.8s ease-in-out infinite;
+  }
+
+  @keyframes breathe {
+    0%, 100% { transform: scale(0.92); opacity: 0.65; }
+    50% { transform: scale(1.12); opacity: 1; }
+  }
+
+  #micBtn {
+    position: relative;
+    width: 168px;
+    height: 168px;
+    border-radius: 50%;
+    border: none;
+    background: radial-gradient(circle at 35% 30%, var(--amber-soft), var(--amber) 60%, #c98936 100%);
+    box-shadow: 0 8px 30px rgba(232, 168, 85, 0.25), inset 0 -6px 14px rgba(0,0,0,0.15);
+    color: #241605;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.3s ease;
+  }
+
+  #micBtn:active {
+    transform: scale(0.96);
+  }
+
+  #micBtn.listening {
+    background: radial-gradient(circle at 35% 30%, #f3a4a4, var(--danger) 65%, #a5473e 100%);
+    box-shadow: 0 8px 34px rgba(201, 112, 100, 0.35), inset 0 -6px 14px rgba(0,0,0,0.15);
+  }
+
+  #micBtn svg { width: 56px; height: 56px; }
+
+  .status {
+    font-size: 0.85rem;
+    color: var(--ink-dim);
+    min-height: 1.2em;
+    text-align: center;
+  }
+
+  /* --- Transcript & advice --- */
+  .card {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 16px;
+    padding: 16px 18px;
+    display: none;
+  }
+
+  .card.show { display: block; }
+
+  .card .label {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #transcriptText {
+    font-size: 0.98rem;
+    line-height: 1.6;
+    color: var(--ink);
+    white-space: pre-wrap;
+  }
+
+  #adviceCard .label { color: var(--amber-soft); }
+
+  #adviceText {
+    font-family: "Noto Serif SC", serif;
+    font-size: 1.05rem;
+    line-height: 1.85;
+    color: #F3ECDD;
+    white-space: pre-wrap;
+  }
+
+  .dots {
+    display: inline-flex;
+    gap: 4px;
+  }
+  .dots span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--amber-soft);
+    animation: dotPulse 1.2s ease-in-out infinite;
+  }
+  .dots span:nth-child(2) { animation-delay: 0.15s; }
+  .dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes dotPulse {
+    0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+    40% { opacity: 1; transform: translateY(-3px); }
+  }
+
+  /* --- Fallback text input --- */
+  .fallback {
+    width: 100%;
+  }
+
+  .fallback textarea {
+    width: 100%;
+    min-height: 64px;
+    resize: vertical;
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 14px;
+    padding: 12px 14px;
+    color: var(--ink);
+    font-family: "Noto Sans SC", sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .fallback textarea::placeholder { color: var(--ink-dim); }
+
+  .fallback button {
+    margin-top: 10px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--panel-line);
+    background: transparent;
+    color: var(--amber-soft);
+    font-size: 0.92rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .fallback button:active { background: rgba(232,168,85,0.08); }
+
+  .notice {
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+    text-align: center;
+    line-height: 1.6;
+    padding: 0 8px;
+  }
+
+  .error-banner {
+    display: none;
+    width: 100%;
+    background: rgba(201, 112, 100, 0.12);
+    border: 1px solid rgba(201, 112, 100, 0.4);
+    color: #E9B2AC;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+  .error-banner.show { display: block; }
+
+  footer {
+    text-align: center;
+    padding: 10px 20px calc(16px + env(safe-area-inset-bottom));
+    font-size: 0.7rem;
+    color: rgba(143, 160, 179, 0.55);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">WALK &nbsp;·&nbsp; SPEAK &nbsp;·&nbsp; REFLECT</div>
+  <h1>步语</h1>
+</header>
+
+<main>
+  <div class="mic-wrap">
+    <div class="mic-glow" id="micGlow"></div>
+    <button id="micBtn" aria-label="按住说话">
+      <svg id="micIcon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M18 11a6 6 0 01-12 0M12 19v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="status" id="statusText">点一下，开始说话</div>
+
+  <div class="error-banner" id="errorBanner"></div>
+
+  <div class="card" id="transcriptCard">
+    <div class="label">你说的</div>
+    <div id="transcriptText"></div>
+  </div>
+
+  <div class="card" id="adviceCard">
+    <div class="label">建议</div>
+    <div id="adviceText"></div>
+  </div>
+
+  <!-- 输入区域：始终可见 -->
+  <div class="fallback" id="fallbackWrap">
+    <textarea id="fallbackInput" placeholder="在这里打字，或点上方麦克风说话……"></textarea>
+    <button id="fallbackSend">发送</button>
+  </div>
+</main>
+
+<footer>步语 · 一个在散步时想清楚事情的小工具</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

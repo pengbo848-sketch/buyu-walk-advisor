@@ -1,0 +1,12 @@
+{
+  "name": "buyu-walk-advisor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "边走边说、边听建议的 PWA —— 语音输入 + LLM 建议生成",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
